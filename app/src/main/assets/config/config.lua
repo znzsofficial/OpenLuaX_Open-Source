@@ -1,0 +1,2 @@
+newfont=false
+tabtitle=true

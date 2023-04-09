@@ -1,0 +1,11 @@
+{
+  LinearLayout,
+  orientation="vertical",
+  layout_width="fill",
+  layout_height="fill",
+  {
+    TextView,
+    text="hello AndroLua+",
+    layout_width="fill",
+  },
+}

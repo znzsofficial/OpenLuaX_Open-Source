@@ -1,0 +1,17 @@
+{
+  LinearLayout;
+  orientation="vertical",
+  gravity="center";
+  layout_width="fill",
+  layout_height="fill",
+  {
+    CircularProgressIndicator,
+    Indeterminate=true,
+    trackCornerRadius="2dp",
+  },
+  {
+    TextView;
+    textSize="18sp";
+    text="正在分析";
+  };
+};

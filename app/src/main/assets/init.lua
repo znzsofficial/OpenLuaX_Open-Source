@@ -1,0 +1,12 @@
+appname="OpenLuaX+"
+appver="1.0"
+appcode="1099"
+packagename="github.znzsofficial.openlua"
+theme="Theme_Material_Light_NoActionBar"
+debugmode=true
+enableExtendedOutputSupport=false
+enableDialogLog=false
+user_permission={
+  "INTERNET",
+  "WRITE_EXTERNAL_STORAGE"
+}

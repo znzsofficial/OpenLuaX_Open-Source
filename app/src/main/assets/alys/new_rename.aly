@@ -1,0 +1,30 @@
+{
+  LinearLayoutCompat,
+  orientation="vertical",
+  layout_width="100%w",
+  layout_height="fill",
+  paddingLeft="20dp",
+  paddingTop="20dp",
+  paddingRight="20dp",
+  Focusable=true,
+  FocusableInTouchMode=true,
+
+  {
+    OutlinedTextInputLayout,
+    hint="文件新名称",
+    --boxBackgroundMode=TextInputLayout.BOX_BACKGROUND_OUTLINE,
+    layout_width="fill",
+    boxCornerRadius="6dp";
+    {
+      OutlinedTextInputEditText,
+      w="fill",
+      h="wrap",
+      textSize="12dp",
+      text=name,
+      singleLine=true,
+      id="file_name",
+      --style=MDC_R.style.Widget_Material3_TextInputEditText_OutlinedBox_Dense,
+    },
+  },
+
+}

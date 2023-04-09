@@ -1,0 +1,30 @@
+{
+  LinearLayout;
+  layout_heigh="-1";
+  id="ll";
+  orientation="vertical";
+  {
+    OutlinedTextInputLayout,
+    layout_margin="16dp",
+    --boxBackgroundMode=TextInputLayout.BOX_BACKGROUND_OUTLINE,
+    layout_width="fill",
+    boxCornerRadius="6dp";
+    id="editlay",
+    {
+      OutlinedTextInputEditText,
+      w="fill",
+      h="wrap",
+      textSize="12dp",
+      singleLine=true,
+      --style=MDC_R.style.Widget_Material3_TextInputEditText_OutlinedBox_Dense,
+      id="edit",
+    },
+  },
+  {
+    ListView;
+    DividerHeight=1;
+    layout_width="-1";
+    id="clist";
+    FastScrollEnabled=true;
+  };
+};

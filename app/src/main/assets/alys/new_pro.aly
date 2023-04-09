@@ -1,0 +1,47 @@
+{
+  LinearLayoutCompat,
+  orientation="vertical",
+  layout_width="100%w",
+  layout_height="fill",
+  paddingLeft="20dp",
+  paddingTop="20dp",
+  paddingRight="20dp",
+  Focusable=true,
+  FocusableInTouchMode=true,
+
+  {
+    OutlinedTextInputLayout,
+    hint="软件名称",
+    --boxBackgroundMode=TextInputLayout.BOX_BACKGROUND_OUTLINE,
+    layout_width="fill",
+    boxCornerRadius="6dp";
+    {
+      OutlinedTextInputEditText,
+      w="fill",
+      h="wrap",
+      textSize="12dp",
+      singleLine=true,
+      id="project_appName",
+      --style=MDC_R.style.Widget_Material3_TextInputEditText_OutlinedBox_Dense,
+    },
+  },
+
+  {
+    OutlinedTextInputLayout,
+    layout_marginTop="16dp",
+    hint="软件包名",
+    --boxBackgroundMode=TextInputLayout.BOX_BACKGROUND_OUTLINE,
+    layout_width="fill",
+    boxCornerRadius="6dp";
+    {
+      OutlinedTextInputEditText,
+      w="fill",
+      h="wrap",
+      textSize="12dp",
+      singleLine=true,
+      id="project_packageName",
+      --style=MDC_R.style.Widget_Material3_TextInputEditText_OutlinedBox_Dense,
+    },
+  },
+
+}

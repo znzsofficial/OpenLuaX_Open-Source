@@ -306,6 +306,7 @@ local function binapk(luapath, apkpath)
                 local req = {
                     [activity.getPackageName()] = packagename,
                     [activity.getPackageName()..".androidx-startup"] = packagename..".androidx-startup",
+                    [activity.getPackageName()..".DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"]= packagename .. ".DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
                     [info.nonLocalizedLabel] = appname,
                     [ver] = appver,
                     [".*\\\\.lua"] = "",
@@ -325,7 +326,8 @@ local function binapk(luapath, apkpath)
                         list.set(n, req[v])
                     elseif user_permission then
                         local p = v:match("%.permission%.([%w_]+)$")
-                        if p and (not user_permission[p]) then
+                        if p and (not user_permission[p]) and
+                           (not v:find("android.permission.DUMP"))
                             list.set(n, "android.permission.UNKNOWN")
                         end
                     end

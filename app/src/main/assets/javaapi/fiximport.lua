@@ -7,22 +7,16 @@ import "com.myopicmobile.textwarrior.common.*"
 import "com.google.android.material.progressindicator.CircularProgressIndicator"
 import "android.content.*"
 import "layout2"
-classes=require "android"
+local rs
+local classes=require "android"
 activity.setTitle('需要导入的类')
-MDC_R=luajava.bindClass"com.google.android.material.R"
+local MDC_R=luajava.bindClass"com.google.android.material.R"
 activity.theme=MDC_R.style.Theme_Material3_DynamicColors_DayNight
 activity.setContentView(loadlayout(layout2))
 
-
 function fiximport(path)
-  require "import"
-  import "android.app.*"
-  import "android.os.*"
-  import "android.widget.*"
-  import "android.view.*"
-  import "com.myopicmobile.textwarrior.common.*"
-  import "layout2"
-  classes=require "android"
+  local table = table
+  local classes=require "android"
   local searchpath=path:gsub("[^/]+%.lua","?.lua;")..path:gsub("[^/]+%.lua","?.aly;")
   local cache={}
   function checkclass(path,ret)
@@ -35,10 +29,6 @@ function fiximport(path)
     f:close()
     if not str then
       return
-      end
-    for s,e,t in str:gfind("(import \"[%w%.]+%*\")") do
-      --local p=package.searchpath(t,searchpath)
-      --print(t,p)
     end
     for s,e,t in str:gfind("import \"([%w%.]+)\"") do
       local p=package.searchpath(t,searchpath)
@@ -67,7 +57,7 @@ function fiximport(path)
       for a,b in ipairs(classes) do
         if string.find(b,k) then
           if cache[b]==nil then
-            table.insert(ret,b)
+            ret[#ret+1]=b
             cache[b]=true
           end
         end
@@ -79,14 +69,13 @@ function fiximport(path)
 
   return String(ret)
 end
---path="/storage/emulated/0/AndroLua/draw2.lua"
---path=luajava.luapath
+
 dir,path=...
 --path=luajava.luapath
 list=ListView(activity)
 list.ChoiceMode=ListView.CHOICE_MODE_MULTIPLE;
 task(fiximport,path,function(v)
-    rs=v
+  rs=v
   adp=ArrayListAdapter(activity,android.R.layout.simple_list_item_multiple_choice,v)
   list.Adapter=adp
   activity.setContentView(list)
@@ -97,7 +86,7 @@ function onCreateOptionsMenu(menu)
   menu.add("复制").setShowAsAction(1)
 end
 
-cm=activity.getSystemService(Context.CLIPBOARD_SERVICE)
+local cm=activity.getSystemService(Context.CLIPBOARD_SERVICE)
 
 function onOptionsItemSelected(item)
   if item.Title=="复制" then
@@ -115,7 +104,7 @@ function onOptionsItemSelected(item)
     local cd = ClipData.newPlainText("label", str)
     cm.setPrimaryClip(cd)
     Toast.makeText(activity,"已复制的剪切板",1000).show()
-  elseif item.title=="反选" then
+   elseif item.title=="反选" then
     for n=0,#rs-1 do
       list.setItemChecked(n,not list.isItemChecked(n))
     end

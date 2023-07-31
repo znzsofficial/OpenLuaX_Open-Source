@@ -4,6 +4,7 @@ import "android.view.*"
 import "android.app.*"
 import "android.os.Build"
 import "android.content.*"
+import "android.graphics.drawable.ColorDrawable"
 import "android.text.SpannableString"
 import "android.text.style.ForegroundColorSpan"
 import "android.animation.ObjectAnimator"
@@ -13,25 +14,28 @@ import "android.view.ViewGroup$LayoutParams"
 import "com.google.android.material.textfield.TextInputEditText"
 import "com.google.android.material.textfield.TextInputLayout"
 import "jpairs"
-MDC_R=luajava.bindClass"com.google.android.material.R"
-activity.theme=MDC_R.style.Theme_Material3_DynamicColors_DayNight
+local MDC_R=luajava.bindClass"com.google.android.material.R"
+activity.setTheme(MDC_R.style.Theme_Material3_DynamicColors_DayNight)
 import "github.daisukiKaffuChino.utils.LuaThemeUtil"
-themeUtil=LuaThemeUtil(this)
-accentColor=themeUtil.ColorAccent
-errorColor=themeUtil.ColorError
-outlineColor=themeUtil.ColorOutline
-surfaceColor=themeUtil.ColorSurface
-surfaceColorVar=themeUtil.ColorSurfaceVariant
-backgroundc=themeUtil.ColorBackground
-onbackgroundc=themeUtil.ColorOnBackground
-primaryColor=themeUtil.ColorPrimary
-primaryOnColor=themeUtil.ColorOnPrimary
-secondaryColor=themeUtil.ColorSecondary
-tertiaryc=themeUtil.ColorTertiary
-
-activity.getWindow()
-.setStatusBarColor(primaryColor)
-.setNavigationBarColor(primaryColor)
+local themeUtil=LuaThemeUtil(this)
+local accentColor=themeUtil.ColorAccent
+local errorColor=themeUtil.ColorError
+local outlineColor=themeUtil.ColorOutline
+local surfaceColor=themeUtil.ColorSurface
+local surfaceColorVar=themeUtil.ColorSurfaceVariant
+local backgroundc=themeUtil.ColorBackground
+local onbackgroundc=themeUtil.ColorOnBackground
+local primaryColor=themeUtil.ColorPrimary
+local primaryOnColor=themeUtil.ColorOnPrimary
+local secondaryColor=themeUtil.ColorSecondary
+local tertiaryc=themeUtil.ColorTertiary
+local table = table
+activity
+.getSupportActionBar()
+.setElevation(0)
+.setBackgroundDrawable(ColorDrawable(backgroundc))
+.setDisplayShowHomeEnabled(true)
+.setDisplayHomeAsUpEnabled(true)
 
 class = require "modules.class"
 OutlinedTextInputLayout=class{
@@ -68,7 +72,7 @@ import "layout"
 --沉浸栏背景色、标题背景色、主背景色
 co={primaryColor,onbackgroundc,primaryOnColor}
 local st = require("socket")
-import "eee/ee"
+import "eee/util"
 activity.setContentView(layout)
 ta=require "android"
 vl=luajava.luadir.."/android.lua"
@@ -118,7 +122,7 @@ function 外部dex类()--eee/libs目录下dex
       while(classNames.hasMoreElements())
         local name = classNames.nextElement();
         if not table.find(tab,name)then
-          table.insert(tab,name)
+          tab[#tab+1]=name
         end
       end
     end
@@ -158,6 +162,13 @@ function 列表(t,s)
 
 end
 
+
+local Executors = luajava.bindClass"java.util.concurrent.Executors"
+local Handler = luajava.bindClass"android.os.Handler"
+local Looper = luajava.bindClass"android.os.Looper"
+local mainLooper = Looper.getMainLooper()
+local handler = Handler(mainLooper)
+
 edit.addTextChangedListener{
 
   onTextChanged=function(a,b,c,d)
@@ -189,12 +200,20 @@ edit.addTextChangedListener{
     if s:len() < 2 then
       列表(clisttab)
      else
-      for k,v in ipairs(clisttab) do
-        if v:lower():gsub([[%$]],[[.]]):find(s,1,true) then
-          table.insert(t,v)
+      local executor = Executors.newSingleThreadExecutor()
+      executor.execute(function()
+          for k,v in ipairs(clisttab) do
+            if v:lower():gsub([[%$]],[[.]]):find(s,1,true) then
+              table.insert(t,v)
+            end
+          end
+          handler.post(function()
+              列表(t,s)
+            end
+          )
         end
-      end
-      列表(t,s)
+      )
+      executor.shutdown()
     end
   end
 }
@@ -222,17 +241,17 @@ function listClass(int)
   end
 end
 
-function 列表切换(int,bool)
+local function changeList(int,bool)
   clisttab =listClass(int)
   列表(clisttab)
   edit.Text = ""
   editlay.Hint = "共计"..#clisttab.."类"
   if bool then--初始化时不显示提示
-    print "列表切换完成"
+    print "changeList完成"
   end
 end
 
-列表切换(333)--初始化列表
+changeList(333)--初始化列表
 
 function onResult(a,b)
   edit.Text=b
@@ -288,7 +307,7 @@ end
         555 > 内置类库校验        
         ]]
 
-function 内裤校验(t)
+function 类库校验(t)
   local int = 0
   local iny = 0
   local talen= #t
@@ -332,70 +351,59 @@ function 指令集(int)
   int = tostring(int)
   switch(int)
    case "111"
-    列表切换(int,true)
+    changeList(int,true)
    case "222"
-    列表切换(int,true)
+    changeList(int,true)
    case "333"
-    列表切换(int,true)
+    changeList(int,true)
    case "444"
     重复清除(ta)
    case "555"
-    内裤校验(ta)
+    类库校验(ta)
   end
 end
 
---[[
-安卓浏览器重制版
+function onCreateOptionsMenu(menu)
+  menu.add("打开").setShowAsAction(1)
+end
 
-搜索时在结果列表中高亮显示搜索的字符。
+import "com.google.android.material.dialog.MaterialAlertDialogBuilder"
+import "vinx.material.textfield.MaterialTextField"
 
-二级列表分类显示，可以更便捷的浏览到想要的类别。
+local inputlayout = {
+  LinearLayout,
+  orientation="vertical",
+  layout_width="match",
+  layout_height="match",
+  paddingLeft="20dp",
+  paddingTop="20dp",
+  paddingRight="20dp",
+  Focusable=true,
+  FocusableInTouchMode=true, 
+  {
+    MaterialTextField,
+    layout_width="fill",
+    layout_height="wrap",
+    textSize="12dp",
+    TintColor=primaryColor,
+    style=MDC_R.style.Widget_Material3_TextInputLayout_OutlinedBox,
+    singleLine=true,
+    id="file_name",
+  },
+}
 
-搜索内容不限大小写，搜索过程中符号“$” 符号可视为 “.”，
-
-二级列表中搜索“ set、get、add、is”等常用方法时默认名前面加“.”，
-以更准确的定位到期望搜索内容。
-
-去除异常方法显示。
-
-简化部分过长且无实际阅览价值的前缀名，
-例:
-java.lang.String → String
- android.view.View → View
- ......
- 2.6更新内容
- 1、修复读取外部dex时报错
- 2、修复类列表过长时点击列表闪退
- 3、增加输入框指令集
- 4、选中查询时如果选中的是一个完整类名时跳转到类浏览界面,反之则返回到类名搜索界面。
- 
-  2.5更新内容
-  1、新增可读取外部dex类，将dex放入eee\libs文件夹内即可。
-  2、新增类列表搜索栏输入新的类时自动存入类库。
-  3、Spinner优化
-  
- 2.4更新内容
- 1、方法栏增加Spinner控件，可根据public类型筛选目标方法。
- 2、优化多item时进去响应速度。
- 
- 2.3更新内容
- 1、优化+修复bug。
- 
- 2.2更新内容
- 1、将父类继承栏更名为继承关系，加入子类与父类类名。
- 2、修复一个本类方法显示简化的判断错误。
- 3、打开继承关系栏时自动添加新的类名到类表。
-
- 2.1更新内容
-1、支持含有中文的类名
-2、搜索时输入或删除第1个字节时不执行搜索事件，
-避免单字节时匹配到过多不期望的搜索结果和减少卡顿
-3、优化选中查询时光标处于查询内容后
-4、快捷搜索增加boolean关键词(搜索时输入bo即可)，
-将快捷搜索限于公有方法列表。
-4、其它调整
-]]
-
-
---by:执笔画妳
-
+function onOptionsItemSelected(m)
+  if m.getItemId() == android.R.id.home
+    activity.finish()
+   elseif m.title=="打开" then
+    local sublayout = {}
+    MaterialAlertDialogBuilder(activity)
+    .setTitle("请输入类名")
+    .setView(loadlayout(inputlayout, sublayout))
+    .setPositiveButton(android.R.string.ok, function()
+  activity.newActivity("eee",{tostring(sublayout.file_name.getText()),ss,co})
+    end)
+    .setNegativeButton(android.R.string.cancel, nil)
+    .show();
+  end
+end

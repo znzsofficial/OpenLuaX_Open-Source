@@ -38,7 +38,7 @@ import "android.os.*"
 import "android.widget.*"
 import "android.view.*"
 import "android.content.*"
-
+import "androidx.coordinatorlayout.widget.CoordinatorLayout"
 
 local array = activity.getTheme().obtainStyledAttributes({
   android.R.attr.textColorPrimary,
@@ -159,11 +159,9 @@ for index,content in ipairs(filterNames) do
     onTabReselected=onTabSelected,
     onTabUnselected=function(tab)
       if canCallSelected and isRefreshing then
-        Handler().postDelayed(Runnable({
-          run=function()
+        Handler().postDelayed(function()
             actionBar.setSelectedNavigationItem(nowPriorityIndex-1)
-          end
-        }),1)
+          end,1)
       end
   end})
   actionBar.addTab(tab)
@@ -179,7 +177,7 @@ item={
     padding="8dp";
     id="title";
     textColor=colorAccent;
-    typeface=Typeface.defaultFromStyle(Typeface.BOLD);
+    textStyle="bold",
   },
   {--条目
     LinearLayout;
@@ -192,7 +190,7 @@ item={
       textSize="12sp";
       id="title";
       textColor=textColorPrimary;
-      typeface=Typeface.defaultFromStyle(Typeface.BOLD);
+      textStyle="bold",
     };
     {
       TextView;
@@ -206,18 +204,12 @@ item={
 
 listView=ListView(activity)
 listView.setFastScrollEnabled(true)
-if isJesse205Activity then--Jesse205主题没有分割线
-  listView.setDivider(dividerVertical)
-end
 
 adapter=LuaMultiAdapter(activity,item)
 listView.setAdapter(adapter)
 
-if CoordinatorLayout then
-  mainLay=CoordinatorLayout(activity)
- else
-  mainLay=FrameLayout(activity)
-end
+
+local mainLay=CoordinatorLayout(activity)
 
 mainLay.addView(listView)
 local linearParams=listView.getLayoutParams()

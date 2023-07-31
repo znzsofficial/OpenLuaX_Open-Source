@@ -66,6 +66,7 @@ public class Welcome extends ComponentActivity {
                   startActivity();
                 });
           });
+      executor.shutdown();
     } else {
       startActivity();
     }

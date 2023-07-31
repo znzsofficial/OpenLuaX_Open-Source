@@ -2,6 +2,60 @@ local _M={}
 
 _M.getUpdateLog=function()
   local log = [[
+1.5.2
+修复布局助手
+小改了一下ExtendedEditText
+移除旧LuaMaterialDialog
+  
+1.5.1 fix
+LuaAdapter使用Glide加载图片
+修复一个bug
+优化文件列表显示
+  
+1.5.0
+更新依赖
+新增 LuaFragmentAdapter
+修复 Logcat 异常
+ 
+1.4.9
+修复bin.lua无法处理DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION的问题
+一些性能优化
+  
+1.4.8
+优化import和loadlayout
+  
+1.4.7
+优化 导入分析和java浏览器
+修复一个bug
+  
+1.4.6
+更新LuaDiffRecyclerAdapter
+优化部分页面
+  
+1.4.5
+loadlayout应该能正常用了
+减少了一些没必要的默认导包
+  
+1.4.4
+修复loadlayout
+src和background以/开头时才会从当前luadir加载图片(划掉
+
+1.4.3
+修复CrashHandler
+  
+1.4.2
+更新LuaThemeUtil
+修复一个bug
+优化java浏览器布局
+
+1.4.1
+迁移LuaFragment和LuaPreferenceFragment到AndroidX
+优化java浏览器
+  
+1.4.0
+试图修复一些bug
+更新依赖
+  
 1.3.9
 新增杰西的LuaMaterialDialog
   
@@ -167,7 +221,7 @@ LuaActivity新增switchDayNight方法
 初版
 
 依赖：
-Material 1.9.0-beta01
+Material 1.9.0
 AppCompat 1.7.0-alpha02
 Glide 4.15.1
 zip4j 2.11.5

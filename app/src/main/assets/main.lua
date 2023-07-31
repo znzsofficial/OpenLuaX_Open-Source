@@ -15,7 +15,7 @@ import "android.view.inputmethod.EditorInfo"
 import "android.text.TextUtils"
 import "android.util.TypedValue"
 
-import "com.open.lua.util.LuaFile"
+import "com.open.lua.util.*"
 import "com.google.android.material.dialog.MaterialAlertDialogBuilder"
 import "com.google.android.material.card.MaterialCardView"
 import "com.google.android.material.bottomsheet.BottomSheetDialog"
@@ -43,13 +43,12 @@ import "bin"
 import "console"
 --jpairs = require "jpairs"
 class = require "modules.class"
-loadlayout = require "oldloadlayout"
+local loadlayout = require "oldloadlayout"
 local lfs = require "lfs"
 local rawio = require "rawio"
 import "android.graphics.Typeface"
 MDC_R=luajava.bindClass"com.google.android.material.R"
 defType=File(activity.getLuaDir().."/font/default.ttf")
-
 
 OutlinedTextInputLayout=class{
   name="material.OutlinedTextInputLayout",
@@ -137,6 +136,10 @@ this.getWindow()
 .setNavigationBarColor(状态栏背景色)
 
 activity.getSupportActionBar().hide()
+
+if not (io.isdir(app_root_pro_dir)) then
+  File(app_root_pro_dir).mkdirs()
+end
 
 --ripple
 circleRippleRes = TypedValue()
@@ -386,24 +389,13 @@ mTab.addOnTabSelectedListener(TabLayout.OnTabSelectedListener{
     mTitle.setText(name)
     mSubTitle.setText(dir)
     read(tab.tag)
-    task(10,function()
+    task(15,function()
       updataList(File(dir).getParent())
     end)
   end;
   onTabReselected=function(tab)
-    --local view=tab.view
-    --Tab被再次选择事件
-    local dir = tab.tag
-    local name = dir:match(app_root_pro_dir.."/(.-)/")
-    mFileSubTitle.setText(dir)
-    mTitle.setText(name)
-    mSubTitle.setText(dir)
-    task(10,function()
-      updataList(File(dir).getParent())
-    end)
   end;
 })
-
 
 
 
@@ -462,8 +454,6 @@ mMore.onClick=function()
   InitMainPop.show()
 
 end
-
-
 
 
 
@@ -623,10 +613,6 @@ mArrow_s.onClick=function()
 
 
 end
-
-
-
-
 
 
 
@@ -1132,6 +1118,21 @@ function open(path)
 
     return
 
+   elseif ends(path,".apk") then
+    import "androidx.core.content.FileProvider"
+    import "android.net.Uri"
+    import "android.content.Intent"
+
+    local intent = Intent(Intent.ACTION_VIEW);
+    intent.addCategory("android.intent.category.DEFAULT");
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    local uri = FileProvider.getUriForFile(activity, activity.getPackageName(), File(Path))
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    intent.setDataAndType(uri, "application/vnd.android.package-archive")
+    activity.startActivity(intent)
+
+    return
+
    else
 
     snack("暂时不支持打开该类型的文件")
@@ -1544,7 +1545,7 @@ function new_project_dialog()
 
   for i=1,500 do
 
-    if lfs.attributes(activity.getLuaExtPath("/project/demo"..i)).mode == "directory" then
+    if io.isdir(activity.getLuaExtPath("/project/demo"..i)) then
 
       continue
 
@@ -1689,31 +1690,6 @@ mPaste.onClick=function()
 
 end
 
---[[
-import "com.myopicmobile.textwarrior.android.OnSelectionChangedListener"
-
-mLuaEditor.setOnSelectionChangedListener(OnSelectionChangedListener{
-
-  a=function(active,s,e)
-
-    if active then
-
-      mSelect.setVisibility(View.VISIBLE)
-
-     else
-
-      mSelect.setVisibility(View.INVISIBLE)
-
-    end
-
-  end,
-
-})
-]]
-
-
-
---import "androidx.appcompat.view.ActionMode"
 function onEditorSelectionChangedListener(view,status,start,end_)
   if status then
     mSelect.setVisibility(View.VISIBLE)
@@ -1736,8 +1712,6 @@ mDraw.setDrawerListener(DrawerLayout.DrawerListener{
   end
 
 })
-
-
 
 
 --符号栏
@@ -1812,7 +1786,7 @@ end
 
 activity.getWindow().setSoftInputMode(0x10)
 
-task(1,Creat_Shortcut_Symbol_Bar(ps_bar))
+task(10,Creat_Shortcut_Symbol_Bar(ps_bar))
 
 
 
@@ -1864,7 +1838,7 @@ end
 filetab.addOnTabSelectedListener(LuaFileTabView.OnTabSelectedListener{
   onTabSelected=function(tab)
 
-    task(10,function()
+    task(15,function()
       updataList(filetab.getPath())
     end)
 
@@ -1966,10 +1940,12 @@ function _updataList(path)
       local FileList = {}
       for file in lfs.dir(当前文件路径) do
         local fullPath = 当前文件路径 .. "/" .. file
-        if lfs.attributes(fullPath).mode == "directory" then
-          当前工程列表[#当前工程列表 + 1] = fullPath
-         else
-          FileList[#FileList + 1] = fullPath
+        if file ~= "." and file ~= ".." then
+          if lfs.attributes(fullPath).mode == "directory" then
+            当前工程列表[#当前工程列表 + 1] = fullPath
+           else
+            FileList[#FileList + 1] = fullPath
+          end
         end
       end
 
@@ -1978,8 +1954,6 @@ function _updataList(path)
       for _, v in pairs(FileList)
         当前工程列表[#当前工程列表 + 1] = v
       end
-      当前工程列表["."]=nil
-      当前工程列表[".."]=nil
 
       if (#当前工程列表) == 0 then
 
@@ -2027,7 +2001,7 @@ function _updataList(path)
 
         mItemImg = {
 
-          src= "imgs/undo.png",
+          src= activity.getLuaDir("imgs/undo.png"),
 
           colorFilter=图标着色,
 
@@ -2081,6 +2055,8 @@ function _updataList(path)
       end
 
       if lfs.attributes(v).mode == "directory" then --File(v).isDirectory() then
+
+        local isImgPath = false
 
         if LuaFile.getParent(当前文件路径)==luajava.luaextdir then
           i = "imgs/project.png"
@@ -2191,6 +2167,7 @@ function _updataList(path)
           vn="MarkDown 文件"
          elseif v:find("%.png$") or v:find("%.jpg$") or v:find("%.jpeg$") or v:find("%.gif$")
           i=v or "imgs/file_img.png"
+          isImgPath = true
           vn="图片"
          elseif v:find("%.zip$") or v:find("%.rar$") or v:find("%.7z$") or v:find("%.tar$")
           i=v or "imgs/zip_box.png"
@@ -2213,29 +2190,61 @@ function _updataList(path)
         end
       end
 
-      mLuaAdapter.add({
+      if isImgPath then
 
-        mItemImg = {
+        mLuaAdapter.add({
 
-          src=i,
+          mItemImg = {
 
-          colorFilter=图标着色,
+            src=i,
 
-        },
-        mItemTitle ={
+            colorFilter=nil,
 
-          text=n,
+          },
+          mItemTitle ={
 
-        },
-        mItemSubTitle={
+            text=n,
 
-          text=vn,
+          },
+          mItemSubTitle={
 
-          tag=v,
+            text=vn,
 
-        },
+            tag=v,
 
-      })
+          },
+
+        })
+
+        isImgPath = false
+
+       else
+
+        mLuaAdapter.add({
+
+          mItemImg = {
+
+            src=activity.getLuaDir(i),
+
+            colorFilter=图标着色,
+
+          },
+          mItemTitle ={
+
+            text=n,
+
+          },
+          mItemSubTitle={
+
+            text=vn,
+
+            tag=v,
+
+          },
+
+        })
+
+      end
 
     end
 
@@ -2479,12 +2488,6 @@ local function adds()
 
     "android",
 
-    "dp2px",
-
-    "table2json",
-
-    "json2table",
-
     "L",
 
   }
@@ -2544,26 +2547,6 @@ for k,v in ipairs(curr_ms) do
 end
 
 mLuaEditor.addPackage("activity",buf)
-
-local buf={}
-
-local tmp={}
-
-local curr_ms=luajava.astable(LuaActivity.getMethods())
-
-for k,v in ipairs(curr_ms) do
-
-  v=v.getName()
-
-  if not tmp[v] then
-
-    tmp[v]=true
-
-    table.insert(buf,v.."()")
-
-  end
-
-end
 
 mLuaEditor.addPackage("this",buf)
 

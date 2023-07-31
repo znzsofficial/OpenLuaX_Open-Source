@@ -1,44 +1,61 @@
 local _M = {}
 
-local require=require
-local luajava = luajava
-local table=require "table"
-luajava.ids=luajava.ids or {id=0x7f000000}
-local ids = luajava.ids
-local _G=_G
+local context = activity
+local bind = luajava.bindClass
+local instanceOf = luajava.instanceof
+local Number = tonumber 
+local matches = string.match
+local sub = string.sub
+local ConstTable = table.const
 local insert = table.insert
-local new = luajava.new
-local bindClass = luajava.bindClass
-local ltrs={}
-local type=type
-local context=activity or service
+local metrics = context.resources.displayMetrics
+local density = metrics.density
+local scaledDensity = metrics.scaledDensity
+local xdpi = metrics.xdpi
+local loadbitmap = require "loadbitmap"
 
-local ViewGroup = bindClass("android.view.ViewGroup")
-local String = bindClass("java.lang.String")
-local Gravity = bindClass("android.view.Gravity")
-local OnClickListener = bindClass("android.view.View$OnClickListener")
-local OnLongClickListener = bindClass("android.view.View$OnLongClickListener")
-local TypedValue = bindClass("android.util.TypedValue")
-local BitmapDrawable = bindClass("android.graphics.drawable.BitmapDrawable")
-local LuaDrawable = bindClass ("com.androlua.LuaDrawable")
-local LuaBitmapDrawable = bindClass ("com.androlua.LuaBitmapDrawable")
---local Glide = bindClass("com.bumptech.glide.Glide")
-local LuaAdapter = bindClass ("com.androlua.LuaAdapter")
-local ArrayListAdapter = bindClass("android.widget.ArrayListAdapter")
-local BasePagerAdapter = luajava.bindClass("github.daisukiKaffuChino.LuaPagerAdapter")
-local AdapterView = bindClass("android.widget.AdapterView")
-local ScaleType = bindClass("android.widget.ImageView$ScaleType")
-local TruncateAt = bindClass("android.text.TextUtils$TruncateAt")
-local Typeface = bindClass("android.graphics.Typeface")
-local scaleTypes = ScaleType.values()
-local android_R = bindClass("android.R")
-android={R=android_R}
+local ScaleType  = bind "android.widget.ImageView$ScaleType"
+local ViewGroup  = bind "android.view.ViewGroup"
+local View       = bind "android.view.View"
+local TypedValue = bind "android.util.TypedValue"
+local ContextThemeWrapper = bind "androidx.appcompat.view.ContextThemeWrapper"
+local ViewStubCompat      = bind "androidx.appcompat.widget.ViewStubCompat"
 
-local Context = bindClass("android.content.Context")
-local DisplayMetrics = bindClass("android.util.DisplayMetrics")
+local PagerAdapter
+pcall(function()
+  PagerAdapter = PagerAdapter or bind "github.daisukiKaffuChino.LuaPagerAdapter"
+end)
+--pcall(function()
+--  PagerAdapter = PagerAdapter or bind "github.daisukiKaffuChino.LuaPagerAdapter"
+--end)
 
-local W = activity.getWidth()
-local H = activity.getHeight()
+_G.Include = ConstTable {}
+
+luajava.ids = luajava.ids or { id = 0x7f000000 }
+local ids = luajava.ids
+local scaleTypeEnum = ScaleType.values()
+
+-- Compatible with .aly
+table.insert(package.searchers, function(path)
+  local alypath=package.path:gsub("%.lua;",".aly;")
+  local path, msg = package.searchpath(path, alypath)
+  if msg then
+    return msg
+  end
+  local f=io.open(path)
+  local s=f:read("*a")
+  f:close()
+  if string.sub(s,1,4)=="\27Lua" then
+    return assert(loadfile(path)),path
+   else
+    --return assert(loadstring("return "..s, path:match("[^/]+/[^/]+$"),"bt")),path
+    local f,st=loadstring("return "..s, path:match("[^/]+/[^/]+$"),"bt")
+    if st then
+      error(st:gsub("%b[]",path,1),0)
+    end
+    return f,st
+  end
+end)
 
 table.insert(package.searchers, function(path)
   local alyxPath = package.path:gsub("%.lua;", ".alyx;")
@@ -47,249 +64,212 @@ table.insert(package.searchers, function(path)
   return assert(loadfile(path)), path
 end)
 
-local loadbitmap = require "loadbitmap"
---print(loadbitmap)
+_M.import = function(path)
+  local alyxPath = package.path:gsub("%.lua;", ".alyx;")
+  local path, msg = package.searchpath(path, alyxPath)
+  if msg then return msg end
+  return loadfile(path)()
+end
 
-local dm=context.getResources().getDisplayMetrics()
-local id=0x7f000000
-local toint={
-  --android:drawingCacheQuality
-  auto=0,
-  low=1,
-  high=2,
+local CONSTANTS_MEASUREMENT = {
+  match_parent = -1,
+  fill_parent  = -1,
+  wrap_content = -2,
+    
+  match = -1,
+  fill  = -1,
+  wrap  = -2,
+}
 
-  --android:importantForAccessibility
-  auto=0,
-  yes=1,
-  no=2,
-
-  --android:layerType
-  none=0,
-  software=1,
-  hardware=2,
-
-  --android:layoutDirection
-  ltr=0,
-  rtl=1,
-  inherit=2,
-  locale=3,
-
-  --android:scrollbarStyle
-  insideOverlay=0x0,
-  insideInset=0x01000000,
-  outsideOverlay=0x02000000,
-  outsideInset=0x03000000,
-
-  --android:visibility
-  visible=0,
-  invisible=4,
-  gone=8,
-
-  wrap_content=-2,
-  fill_parent=-1,
-  match_parent=-1,
-  wrap=-2,
-  fill=-1,
-  match=-1,
-
-  --android:autoLink
-  none=0x00,
-  web=0x01,
-  email=0x02,
-  phon=0x04,
-  map=0x08,
-  all=0x0f,
-
-  --android:orientation
-  vertical=1,
-  horizontal= 0,
-
-  --android:gravity
-  axis_clip = 8,
-  axis_pull_after = 4,
-  axis_pull_before = 2,
-  axis_specified = 1,
-  axis_x_shift = 0,
-  axis_y_shift = 4,
-  bottom = 80,
-  center = 17,
-  center_horizontal = 1,
-  center_vertical = 16,
-  clip_horizontal = 8,
-  clip_vertical = 128,
-  display_clip_horizontal = 16777216,
-  display_clip_vertical = 268435456,
-  --fill = 119,
-  fill_horizontal = 7,
-  fill_vertical = 112,
-  horizontal_gravity_mask = 7,
-  left = 3,
-  no_gravity = 0,
+local CONSTANTS_GRAVITY = ConstTable {
+  axis_clip                        = 8,
+  axis_pull_after                  = 4,
+  axis_pull_before                 = 2,
+  axis_specified                   = 1,
+  axis_x_shift                     = 0,
+  axis_y_shift                     = 4,
+  bottom                           = 80,
+  center                           = 17,
+  center_horizontal                = 1,
+  center_vertical                  = 16,
+  clip_horizontal                  = 8,
+  clip_vertical                    = 128,
+  display_clip_horizontal          = 16777216,
+  display_clip_vertical            = 268435456,
+  fill                             = 119,
+  fill_horizontal                  = 7,
+  fill_vertical                    = 112,
+  horizontal_gravity_mask          = 7,
+  left                             = 3,
+  no_gravity                       = 0,
   relative_horizontal_gravity_mask = 8388615,
-  relative_layout_direction = 8388608,
-  right = 5,
-  start = 8388611,
-  top = 48,
-  vertical_gravity_mask = 112,
-  ["end"] = 8388613,
-
-  --android:textAlignment
-  inherit=0,
-  gravity=1,
-  textStart=2,
-  textEnd=3,
-  textCenter=4,
-  viewStart=5,
-  viewEnd=6,
-
-  --android:inputType
-  none=0x00000000,
-  text=0x00000001,
-  textCapCharacters=0x00001001,
-  textCapWords=0x00002001,
-  textCapSentences=0x00004001,
-  textAutoCorrect=0x00008001,
-  textAutoComplete=0x00010001,
-  textMultiLine=0x00020001,
-  textImeMultiLine=0x00040001,
-  textNoSuggestions=0x00080001,
-  textUri=0x00000011,
-  textEmailAddress=0x00000021,
-  textEmailSubject=0x00000031,
-  textShortMessage=0x00000041,
-  textLongMessage=0x00000051,
-  textPersonName=0x00000061,
-  textPostalAddress=0x00000071,
-  textPassword=0x00000081,
-  textVisiblePassword=0x00000091,
-  textWebEditText=0x000000a1,
-  textFilter=0x000000b1,
-  textPhonetic=0x000000c1,
-  textWebEmailAddress=0x000000d1,
-  textWebPassword=0x000000e1,
-  number=0x00000002,
-  numberSigned=0x00001002,
-  numberDecimal=0x00002002,
-  numberPassword=0x00000012,
-  phone=0x00000003,
-  datetime=0x00000004,
-  date=0x00000014,
-  time=0x00000024,
-
-  --android:imeOptions
-  normal=0x00000000,
-  actionUnspecified=0x00000000,
-  actionNone=0x00000001,
-  actionGo=0x00000002,
-  actionSearch=0x00000003,
-  actionSend=0x00000004,
-  actionNext=0x00000005,
-  actionDone=0x00000006,
-  actionPrevious=0x00000007,
-  flagNoFullscreen=0x2000000,
-  flagNavigatePrevious=0x4000000,
-  flagNavigateNext=0x8000000,
-  flagNoExtractUi=0x10000000,
-  flagNoAccessoryAction=0x20000000,
-  flagNoEnterAction=0x40000000,
-  flagForceAscii=0x80000000,
-
-  --layout_scrollFlags
-  scroll=1,
-  exitUtilCollapsed=2,
-  enterAlways=4,
-  enterAlwaysCollapsed=8,
-  snap=16,
-
-  --layout_collapseMode
-  pin=1,
-  parallax=2,
+  relative_layout_direction        = 8388608,
+  right                            = 5,
+  start                            = 8388611,
+  top                              = 48,
+  vertical_gravity_mask            = 112,
+  "end"                            = 8388613,
 }
 
-local scaleType={
-  --android:scaleType
-  matrix=0,
-  fitXY=1,
-  fitStart=2,
-  fitCenter=3,
-  fitEnd=4,
-  center=5,
-  centerCrop=6,
-  centerInside=7,
+local CONSTANTS = {
+  -- orientation
+  vertical   = 1,
+  horizontal = 0,
+  
+  -- layout_collapseMode
+  pin      = 1,
+  parallax = 2,
+  
+  -- layout_scrollFlags
+  noScroll             = 0,
+  scroll               = 1,
+  exitUntilCollapsed   = 2,
+  enterAlways          = 4,
+  enterAlwaysCollapsed = 8,
+  snap                 = 16,
+  snapMargins          = 32,
+  
+  -- visibility
+  visible   = 0,
+  invisible = 4,
+  gone      = 8,
+  
+  scaleType = ConstTable {
+    matrix       = 0,
+    fitXY        = 1,
+    fitStart     = 2,
+    fitCenter    = 3,
+    fitEnd       = 4,
+    center       = 5,
+    centerCrop   = 6,
+    centerInside = 7,
+  },
+  
+  relativeRules = ConstTable {
+    layout_above                    = 2,
+    layout_alignBaseline            = 4,
+    layout_alignBottom              = 8,
+    layout_alignEnd                 = 19,
+    layout_alignLeft                = 5,
+    layout_alignParentBottom        = 12,
+    layout_alignParentEnd           = 21,
+    layout_alignParentLeft          = 9,
+    layout_alignParentRight         = 11,
+    layout_alignParentStart         = 20,
+    layout_alignParentTop           = 10,
+    layout_alignRight               = 7,
+    layout_alignStart               = 18,
+    layout_alignTop                 = 6,
+    layout_alignWithParentIfMissing = 0,
+    layout_below                    = 3,
+    layout_centerHorizontal         = 14,
+    layout_centerInParent           = 13,
+    layout_centerVertical           = 15,
+    layout_toEndOf                  = 17,
+    layout_toLeftOf                 = 0,
+    layout_toRightOf                = 1,
+    layout_toStartOf                = 16
+  }
 }
 
-local rules={
-  layout_above=2,
-  layout_alignBaseline=4,
-  layout_alignBottom=8,
-  layout_alignEnd=19,
-  layout_alignLeft=5,
-  layout_alignParentBottom=12,
-  layout_alignParentEnd=21,
-  layout_alignParentLeft=9,
-  layout_alignParentRight=11,
-  layout_alignParentStart=20,
-  layout_alignParentTop=10,
-  layout_alignRight=7,
-  layout_alignStart=18,
-  layout_alignTop=6,
-  layout_alignWithParentIfMissing=0,
-  layout_below=3,
-  layout_centerHorizontal=14,
-  layout_centerInParent=13,
-  layout_centerVertical=15,
-  layout_toEndOf=17,
-  layout_toLeftOf=0,
-  layout_toRightOf=1,
-  layout_toStartOf=16
+
+local UNITS = ConstTable {
+  px = 0,
+  dp = 1,
+  sp = 2,
+  pt = 3,
+  mm = 5,
+  "in" = 4
 }
 
-local types={
-  px=0,
-  dp=1,
-  sp=2,
-  pt=3,
-  ["in"]=4,
-  mm=5
+local UNITS_CONVERTER = ConstTable {
+  px = function(v)
+    return v
+  end,
+  dp = function(v)
+    return v * density + 0.5
+  end,
+  sp = function(v)
+    return v * scaledDensity + 0.5
+  end,
+  pt = function(v)
+    return xdpi * value * 0.013888889
+  end,
+  mm = function(v)
+    return xdpi * value * 0.03937008
+  end,
+  "in" = function(v)
+    return xdpi * value
+  end,
+  "%w" = function(v)
+    return v / 100 * activity.width
+  end,
+  "%h" = function(v)
+    return v / 100 * activity.height
+  end
 }
 
-local function checkType(v)
-  local n,ty=string.match(v,"^(%-?[%.%d]+)(%a%a)$")
-  return float(tonumber(n) or 0),types[ty]
+
+local IGNORED_ATTRS = ConstTable {
+  id = 0,
+  viewId = 0,
+  style = 0,
+  theme = 0,
+  layout_width = 0,
+  layout_height = 0,
+
+  padding = 0,  
+  paddingLeft = 0,
+  paddingRight = 0,
+  paddingTop = 0,
+  paddingBottom = 0,
+  paddingStart = 0,
+  paddingEnd = 0,
+  paddingVertical = 0,
+  paddingHorizontal = 0,
+  
+  layout_margin = 0,
+  layout_marginLeft = 0,
+  layout_marginRight = 0,
+  layout_marginTop = 0,
+  layout_marginBottom = 0,
+  layout_marginVertical = 0,
+  layout_marginHorizontal = 0,
+  
+  layoutParams = 0,
+  base = 0,
+  meta = 0,
+  let = 0,
+}
+
+local customAttrs = {}
+
+local function throw(baseStr, value)
+  error(baseStr:format(value), -1)
 end
 
-local function checkPercent(v)
-  local n,ty=string.match(v,"^(%-?[%.%d]+)%%([wh])$")
-  if ty==nil then
-    return nil
-   elseif ty=="w" then
-    return tonumber(n)*W/100
-   elseif ty=="h" then
-    return tonumber(n)*H/100
+local function measure(value)  
+  local unitConverter = UNITS_CONVERTER[sub(value, -2, -1)]
+  if unitConverter then
+    return unitConverter(sub(value, 1, -3))
   end
 end
 
-local function split(s,t)
-  local idx=1
-  local l=#s
-  return function()
-    local i=s:find(t,idx)
-    if idx>=l then
-      return nil
-    end
-    if i==nil then
-      i=l+1
-    end
-    local sub=s:sub(idx,i-1)
-    idx=i+1
-    return sub
+local function getSpec(value)
+  if type(value) == "string" then
+    return CONSTANTS_MEASUREMENT[value] or measure(value)
+   else
+    return value
   end
 end
-local function checkint(s)
-  local ret=0
-  for n in split(s,"|") do
-    if toint[n] then
-      ret=ret | toint[n]
+
+local function toConstant(value, t)
+  if type(value) == "number" then return value end   
+  local ret = 0
+  for n in (value.."|"):gmatch("(.-)|") do
+    local s = t[n]
+    if t[n] then
+      ret = ret | s
      else
       return nil
     end
@@ -297,588 +277,435 @@ local function checkint(s)
   return ret
 end
 
-local function checkNumber(var)
-  if type(var) == "string" then
-    if var=="true" then
-      return true
-     elseif var=="false" then
-      return false
-    end
 
-    if toint[var] then
-      return toint[var]
-    end
+local function setAttribute(view, k, v, params)
+  local valueType = type(v)
 
-    local p=checkPercent(var)
-    if p then
-      return p
-    end
+  if k == "layout_weight" then
+    params.weight = v
+   elseif k == "layout_gravity" then
+    params.gravity = toConstant(v, CONSTANTS_GRAVITY)
 
-    local i=checkint(var)
-    if i then
-      return i
-    end
+   elseif k == "layout_marginStart" then
+    params.setMarginStart(measure(v) or v)
+   elseif k == "layout_marginEnd" then
+    params.setMarginEnd(measure(v) or v)
 
-    local h=string.match(var,"^#(%x+)$")
-    if h then
-      local c=tonumber(h,16)
-      if c then
-        if #h<=6 then
-          return c-0x1000000
-         elseif #h<=8 then
-          if c>0x7fffffff then
-            return c-0x100000000
-           else
-            return c
-          end
-        end
+   elseif k == "minHeight" then
+    view.setMinimumHeight(measure(v))
+   elseif k == "minWidth" then
+    view.setMinimumWidth(measure(v))
+
+   elseif (CONSTANTS.relativeRules[k] && v) then
+    params.addRule(CONSTANTS.relativeRules[k])
+   elseif CONSTANTS.relativeRules[k] then
+    params.addRule(CONSTANTS.relativeRules[k], ids[v])
+
+   elseif k == "textSize" then
+    if Number(v) then  
+      view.setTextSize(UNITS.px, v)
+     else  
+      local n = sub(v, 1, -3)
+      local unit = sub(v, -2, -1)
+      if unit then
+        view.setTextSize(UNITS[unit], Number(n))
       end
     end
 
-    local n,ty=checkType(var)
-    if ty then
-      return TypedValue.applyDimension(ty,n,dm)
-    end
-  end
-  -- return var
-end
-
-local function checkValue(var)
-  --local n = tonumber(var) or checkNumber(var)
-  ---when n > 0 print(n)
-  return tonumber(var) or checkNumber(var) or var
-end
-
-local function checkValues(...)
-  local vars={...}
-  for n=1,#vars do
-    vars[n]=checkValue(vars[n])
-  end
-  return unpack(vars)
-end
-
-local function getattr(s)
-  return android_R.attr[s]
-end
-
-local function checkattr(s)
-  local e,s=pcall(getattr,s)
-  if e then
-    return s
-  end
-  return nil
-end
-
-local function getIdentifier(name)
-  return context.getResources().getIdentifier(name,null,null)
-end
-
-local function dump2 (t)
-  local _t={}
-  table.insert(_t,tostring(t))
-  table.insert(_t,"\t{")
-  for k,v in pairs(t) do
-    if type(v)=="table" then
-      table.insert(_t,"\t\t"..tostring(k).."={"..tostring(v[1]).." ...}")
-     else
-      table.insert(_t,"\t\t"..tostring(k).."="..tostring(v))
-    end
-  end
-  table.insert(_t,"\t}")
-  t=table.concat(_t,"\n")
-  return t
-end
-
-local ver = luajava.bindClass("android.os.Build").VERSION.SDK_INT;
-local function setBackground(view,bg)
-  if ver<16 then
-    view.setBackgroundDrawable(bg)
-   else
-    view.setBackground(bg)
-  end
-end
-
-_M.loadImage = function(view, data)
-  if data:find("^%?") then
-    view.setImageResource(getIdentifier(v:sub(2,-1)))
-  
-   elseif data:find("^https?://") then
-    task(
-      function(...)
-        require "loadbitmap"
-        url = ...
-        return loadbitmap(url)
-      end,
-      data,
-      function(bmp)
-        --require "loadbitmap"
-        view.setImageBitmap(bmp)
-      end
-    )
-    
-   else
-    require "loadbitmap"
-    view.setImageBitmap(loadbitmap(data))
-  end
-end
+   elseif k == "textStyle" then
 
 
-local function setattribute(root,view,params,k,v,ids)
-  if k=="layout_x" then
-    params.x=checkValue(v)
-   elseif k=="layout_y" then
-    params.y=checkValue(v)
-   elseif k=="w" then
-    params.width=checkValue(v)
-   elseif k=="h" then
-    params.height=checkValue(v)
-   elseif k=="layout_weight" then
-    params.weight=checkValue(v)
-   elseif k=="layout_gravity" then
-    params.gravity=checkValue(v)
-   elseif k=="layout_marginStart" then
-    params.setMarginStart(checkValue(v))
-   elseif k=="layout_marginEnd" then
-    params.setMarginEnd(checkValue(v))
-   elseif k=="minHeight" then
-    view.setMinimumHeight(checkValue(v))
-   elseif k=="minWidth" then
-    view.setMinimumWidth(checkValue(v))
-    --elseif k=="rippleColor" then
-    --view.setClickable(true)
-    --setRipple(view,checkNumber(v))
-    --elseif k=="unRippleColor" then
-    --view.setClickable(true)
-    --setUnRipple(view,checkNumber(v))
+   elseif k == "textAppearance" then
+    view.setTextAppearance(context, v)
 
-    -----------------------------------------------------------------------------
-    --检查自定义第三方属性
-    -----------------------------------------------------------------------------
-   elseif k=="layout_behavior" then
+   elseif k == "ellipsize" then
+  --  view.setEllipsize(TruncateAt[string.upper(v)])
 
-    if tostring(v) == "@string/appbar_scrolling_view_behavior" then
+   elseif k == "url" then
+    view.loadUrl(v)
 
-      local ScrollingViewBehavior = import "com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
-
-      params.setBehavior(ScrollingViewBehavior())
-
-     elseif tostring(v) == "@string/bottom_sheet_behavior" then
-
-      local BottomSheetBehavior = import "com.google.android.material.bottomsheet.BottomSheetBehavior"
-
-      local mBottomSheetBehavior=BottomSheetBehavior()
-
-      params.setBehavior(mBottomSheetBehavior)
-
-     else
-
-      params.setBehavior(checkValue(v))
-
-    end
-
-   elseif k=="behavior_peekHeight" then
-
-    if params.getBehavior() then
-
-      params.getBehavior().setPeekHeight(checkValue(v))
-
-     else
-
-      task(1,function()
-
-        params.getBehavior().setPeekHeight(checkValue(v))
-
-      end)
-
-    end
-
-   elseif k=="behavior_hideable" then
-
-    if params.getBehavior() then
-
-      params.getBehavior().setHideable(checkValue(v))
-
-     else
-
-      task(1,function()
-
-        params.getBehavior().setHideable(checkValue(v))
-
-      end)
-
-    end
-
-   elseif k=="behavior_skipCollapsed" then
-
-    if params.getBehavior() then
-
-      params.getBehavior().setSkipCollapsed(checkValue(v))
-
-     else
-
-      task(1,function()
-
-        params.getBehavior().setSkipCollapsed(checkValue(v))
-
-      end)
-
-    end
-
-   elseif k=="layout_scrollFlags" then
-
-    params.setScrollFlags(checkValue(v))
-
-   elseif k=="layout_collapseMode" then
-
-    params.setCollapseMode(checkValue(v))
-
-   elseif k=="layout_collapseParallaxMultiplier" then
-
-    params.setParallaxMultiplier(checkValue(v))
-
-   elseif k=="layout_anchor" then
-
-    params.setAnchorId(ids[v])
-
-    -----------------------------------------------------------------------------
-    --第三方属性检查完毕
-    -----------------------------------------------------------------------------
-
-   elseif rules[k] and (v==true or v=="true") then
-    params.addRule(rules[k])
-   elseif rules[k] then
-    params.addRule(rules[k],ids[v])
-   elseif k=="items" then --创建列表项目
-    if type(v)=="table" then
-      if view.adapter then
-        view.adapter.addAll(v)
-       else
-        local adapter=ArrayListAdapter(context,android_R.layout.simple_list_item_1, String(v))
-        view.setAdapter(adapter)
-      end
-     elseif type(v)=="function" then
-      if view.adapter then
-        view.adapter.addAll(v())
-       else
-        local adapter=ArrayListAdapter(context,android_R.layout.simple_list_item_1, String(v()))
-        view.setAdapter(adapter)
-      end
-     elseif type(v)=="string" then
-      local v=rawget(root,v) or rawget(_G,v)
-      if view.adapter then
-        view.adapter.addAll(v())
-       else
-        local adapter=ArrayListAdapter(context,android_R.layout.simple_list_item_1, String(v()))
-        view.setAdapter(adapter)
-      end
-    end
-   elseif k=="pages" and type(v)=="table" then --创建页项目
-    --PageView已被废弃，请使用ViewPager
-    local vpg=ArrayList()
-    for n,o in ipairs(v) do
-      local tp=type(o)
-      if tp=="string" or tp=="table" then
-        vpg.add(loadlayout(o,root))
-       else
-        vpg.add(o)
-      end
-    end
-    view.setAdapter(BasePagerAdapter(vpg))
-   elseif k=="pagesWithTitle" and type(v)=="table" then --创建带标题的页项目
-    local vpg=ArrayList()
-    for n,o in ipairs(v[1]) do
-      local tp=type(o)
-      if tp=="string" or tp=="table" then
-        vpg.add(loadlayout(o,root))
-       else
-        vpg.add(o)
-      end
-    end
-    local titles=ArrayList()
-    for n,o in ipairs(v[2]) do
-      titles.add(o)
-    end
-    view.setAdapter(BasePagerAdapter(vpg,titles))
-   elseif k=="textSize" then
-    if tonumber(v) then
-      view.setTextSize(tonumber(v))
-     elseif type(v)=="string" then
-      local n,ty=checkType(v)
-      if ty then
-        view.setTextSize(ty,n)
-       else
-        view.setTextSize(v)
-      end
-     else
-      view.setTextSize(v)
-    end
-   elseif k=="textStyle" then
-    if v=="bold" then
-      local bold = Typeface.defaultFromStyle(Typeface.BOLD)
-      view.setTypeface(bold)
-     elseif v=="normal" then
-      local normal = Typeface.defaultFromStyle(Typeface.NORMAL)
-      view.setTypeface(normal)
-     elseif v=="italic" then
-      local italic = Typeface.defaultFromStyle(Typeface.ITALIC)
-      view.setTypeface(italic)
-     elseif v=="italic|bold" or v=="bold|italic" then
-      local bold_italic = Typeface.defaultFromStyle(Typeface.BOLD_ITALIC)
-      view.setTypeface(bold_italic)
-    end
-   elseif k=="textAppearance" then
-    view.setTextAppearance(context,checkattr(v))
-   elseif k=="ellipsize" then
-    view.setEllipsize(TruncateAt[string.upper(v)])
-   elseif k=="url" then
-    view.loadUrl(url)
-   elseif k=="src" then
+   elseif k == "src" then
     _M.loadImage(view, v)
-    
-   elseif k=="scaleType" then
-    view.setScaleType(scaleTypes[scaleType[v]])
-   elseif k=="background" then
-    if type(v)=="string" then
-      if v:find("^%?") then
-        view.setBackgroundResource(getIdentifier(v:sub(2,-1)))
-       elseif v:find("^#") then
-        view.setBackgroundColor(checkNumber(v))
-       elseif rawget(root,v) or rawget(_G,v) then
-        v=rawget(root,v) or rawget(_G,v)
-        if type(v)=="function" then
-          setBackground(view,LuaDrawable(v))
-         elseif type(v)=="userdata" then
-          setBackground(view,v)
-        end
-       else
-        if (not v:find("^/")) and luadir then
-          v=luadir..v
-        end
-        if v:find("%.9%.png") then
-          setBackground(view,NineBitmapDrawable(loadbitmap(v)))
-         else
-          setBackground(view,LuaBitmapDrawable(context,v))
-        end
-      end
-     elseif type(v)=="userdata" then
-      setBackground(view,v)
-     elseif type(v)=="number" then
-      setBackground(view,v)
-    end
-   elseif k=="onClick" then --设置onClick事件接口
-    local listener
-    if type(v)=="function" then
-      listener=OnClickListener{onClick=v}
-     elseif type(v)=="userdata" then
-      listener=v
-     elseif type(v)=="string" then
-      if ltrs[v] then
-        listener=ltrs[v]
-       else
-        local l=rawget(root,v) or rawget(_G,v)
-        if type(l)=="function" then
-          listener=OnClickListener{onClick=l}
-         elseif type(l)=="userdata" then
-          listener=l
-         else
-          listener=OnClickListener{onClick=function(a)(root[v] or _G[v])(a)end}
-        end
-        ltrs[v]=listener
-      end
-    end
-    view.setOnClickListener(listener)
-   elseif k=="onLongClick" then --设置onLongClick事件接口
-    local listener
-    if type(v)=="function" then
-      listener=OnLongClickListener{onLongClick=v}
-     elseif type(v)=="userdata" then
-      listener=v
-     elseif type(v)=="string" then
-      if ltrs[v] then
-        listener=ltrs[v]
-       else
-        local l=rawget(root,v) or rawget(_G,v)
-        if type(l)=="function" then
-          listener=OnLongClickListener{onLongClick=l}
-         elseif type(l)=="userdata" then
-          listener=l
-         else
-          listener=OnLongClickListener{onLongClick=function(a)(root[v] or _G[v])(a)end}
-        end
-        ltrs[v]=listener
-      end
-    end
-    view.setOnLongClickListener(listener)
-   elseif k=="password" and (v=="true" or v==true) then
+
+   elseif k == "scaleType" then
+    view.setScaleType(scaleTypeEnum[CONSTANTS.scaleType[v]] or v)
+
+   elseif k == "background" then
+
+   elseif (k == "password" && v) then
     view.setInputType(0x81)
-   elseif type(k)=="string" and not(k:find("layout_")) and not(k:find("padding")) and k~="style" and k ~= "theme" and k~= "base" then --设置属性
-    k=string.gsub(k,"^(%w)",function(s)return string.upper(s)end)
-    if k=="Text" or k=="Title" or k=="Subtitle" then
-      view["set"..k](v)
-     elseif not k:find("^On") and not k:find("^Tag") and type(v)=="table" then
-      view["set"..k](checkValues(unpack(v)))
+    
+   elseif k == "tag" then
+    view.setTag(v)
+   elseif k == "text" then
+    view.setText(v)     
+   elseif k == "title" then
+    view.setTitle(v)
+   elseif k == "subtitle" then
+    view.setSubtitle(v)
+   elseif k == "hint" then
+    view.setHint(v)
+   elseif k == "summary" then
+    view.setSummary(v)
+   
+   elseif k == "pages" then
+    local list = ArrayList()
+    for _, j in ipairs(v) do
+      list.add(_M.load(j))
+    end
+    view.setAdapter(PagerAdapter(list))
+    
+   elseif k == "pagesWithTitle" then
+    local list = ArrayList()
+    local titles =  ArrayList()
+    for _, j in pairs(v) do
+      list.add(_M.load(j[2]))
+      titles.add(j[1])
+    end
+    view.setAdapter(PagerAdapter(list, titles))    
+    
+   elseif k == "gravity" then
+    view.setGravity(toConstant(v, CONSTANTS_GRAVITY) or v)
+    
+   elseif k == "orientation" then
+    view.setOrientation(CONSTANTS[v] or v)
+    
+   elseif k == "layout_collapseMode" then
+    params.setCollapseMode(CONSTANTS[v] or v)
+    
+   elseif k == "layout_behavior" then
+  -- print(view.layoutParams)
+    params.setBehavior(v)
+    
+   elseif k == "layout_scrollFlags" then
+    params.setScrollFlags(toConstant(v, CONSTANTS) or v)
+   
+   elseif k == "behavior_peekHeight" then
+    if params.behavior then
+      params.behavior.setPeekHeight(measure(v) or 0)
      else
-      view["set"..k](checkValue(v))
+      task(1, function()
+        params.behavior.setPeekHeight(measure(v) or 0)
+      end)
+    end
+    
+   elseif k == "layout_anchor" then
+    params.setAnchorId(ids[v])
+   
+   elseif k == "layout_anchorGravity" then
+    params.anchorGravity = toConstant(v, CONSTANTS_GRAVITY) or v
+    
+   else
+    if customAttrs[k] then
+      customAttrs[k](view, v, params)
+     elseif valueType == "table" then
+      local setter = "set"..k:gsub("^(%w)", string.upper)
+      view[setter](table.unpack(v))
+     else
+      if matches(k, "layout_") then
+        if valueType == "string" then
+          v = measure(v) or toConstant(v, CONSTANTS)
+        end
+        params[k:gsub("layout_", "")] = v
+       else
+        local setter = "set"..k:gsub("^(%w)", string.upper)
+        if valueType == "string" then
+          v = measure(v) or toConstant(v, CONSTANTS) or v
+        end
+        view[setter](v)
+      end
     end
   end
-  return params
 end
 
-local function copytable(f,t,b)
-  for k,v in pairs(f) do
-    if k==1 then
-     elseif b or t[k]==nil then
-      t[k]=v
-    end
-  end
-end
 
-local function setstyle(c,t,root,view,params,ids)
-  local mt=getmetatable(t)
-  if not mt or not mt.__index then
-    return
+local function initView(viewConstructor, t, parent)
+  local view  
+  local base = t.base
+  if instanceOf(viewConstructor, View) then
+    view = viewConstructor
+   elseif t.style or t.theme or (base && base.style) then
+    view = viewConstructor(
+      ContextThemeWrapper(context, t.theme or t.style or base.style),
+      nil, t.style or base.style
+    )
+   else
+    view = viewConstructor(context)
   end
-  local m=mt.__index
-  if c[m] then
-    return
-  end
-  c[m]=true
-  for k,v in pairs(m) do
-    if not rawget(c,k) then
-      pcall(setattribute,root,view,params,k,v,ids)
-    end
-    c[k]=true
-  end
-  setstyle(c,m,root,view,params,ids)
-end
-
-local function loadlayout(t,root,group)
-  if type(t)=="string" then
-    t=require(t)
-   elseif type(t)~="table" then
-    error(string.format("loadlayout error: Fist value Must be a table, checked import layout.",0))
-  end
-  root=root or _G
   
+  local params
+  if t.layoutParams then
+    params = t.layoutParams
+   else
+    params = ViewGroup.LayoutParams(
+      getSpec(t.layout_width or (base and base.layout_width) or -2),
+      getSpec(t.layout_height or (base and base.layout_height) or -2)
+    )  
+    if parent then
+      params = parent.LayoutParams(params)
+    end
+  end
+
+  local margin = t.layout_margin
+  local marginLeft = t.layout_marginLeft
+    or t.layout_marginHorizontal or margin
+  local marginTop = t.layout_marginTop
+    or t.layout_marginVertical or margin
+  local marginRight = t.layout_marginRight
+    or t.layout_marginHorizontal or margin
+  local marginBottom = t.layout_marginBottom
+    or t.layout_marginVertical or margin
+
+  if (marginLeft || marginTop
+   || marginRight || marginBottom) then
+    params.setMargins(
+      getSpec(marginLeft or 0),
+      getSpec(marginTop or 0),
+      getSpec(marginRight or 0),
+      getSpec(marginBottom or 0)
+    )
+  end
+
+
+  local padding = t.padding
+  local paddingLeft = t.paddingLeft
+    or t.paddingHorizontal or padding
+  local paddingTop = t.paddingTop
+    or t.paddingVertical or padding
+  local paddingRight = t.paddingRight
+    or t.paddingHorizontal or padding
+  local paddingBottom = t.paddingBottom
+    or t.paddingVertical or padding
+
+  if (paddingLeft || paddingTop
+   || paddingRight || paddingBottom) then
+    view.setPadding(
+      getSpec(paddingLeft or 0),
+      getSpec(paddingTop or 0),
+      getSpec(paddingRight or 0),
+      getSpec(paddingBottom or 0)
+    )
+  end
+
+  if (t.paddingStart || t.paddingEnd) then
+    view.setPaddingRelative(
+      getSpec(t.paddingStart or padding or 0),
+      getSpec(paddingTop or 0),
+      getSpec(t.paddingEnd or padding or 0),
+      getSpec(paddingBottom or 0))
+  end
+  
+  
+  return view.setLayoutParams(params), params
+end
+
+
+local function load(t, env, parent)
+  local view
+  local params
+  local env = env or _G
+
+  if type(t) == "string" then
+    t = require(t)
+   elseif type(t) ~= "table" then
+    throw("[Layout.load] Error at: %s \n\tThe first argument of the method must be a layout-table or string! ", t)
+  end
+  
+  :: construct ::
+  local viewConstructor = t[1]
+  if !viewConstructor then
+    throw("[Layout.load] Error at: %s \n\tThe first value of the layout-table must be a View Class, check your imported packages.", dump(t))
+   elseif type(viewConstructor) == "table" then
+    if viewConstructor.__call then
+      viewConstructor = viewConstructor.__call
+     elseif viewConstructor == Include then
+      if (t.condition && !t.condition()) then
+        return ViewStubCompat(activity, nil)
+      end
+      if t.init then
+        return load(t.layout, env, parent)
+       else
+        t = require(t.layout)
+        goto construct
+      end
+    end
+  end
+
+
+  local id = t.id
+  local viewId = t.viewId
+  local view, params = initView(viewConstructor, t, parent)
+  if id then
+    rawset(env, id, view)
+    if viewId then
+      ids[id] = viewId
+      view.setId(viewId)
+     else
+      local idIndex = ids.id
+      ids.id = idIndex + 1
+      ids[id] = idIndex
+      view.setId(idIndex)
+    end
+  end
+ 
   if t.base then
     for k, v in pairs(t.base) do
-      if not t[k] then
-     --print(1)
-        t[k] = v
-      end
+      t[k] = t[k] or v
+    end
+  end
+ 
+  for k, v in pairs(t) do
+    if IGNORED_ATTRS[k] or Number(k) then
+      continue     
+     else
+      local e, s = pcall(setAttribute, view, k, v, params)
+      if !e then
+        local a, du = pcall(dump, t)
+        print(du, view.parent, s, k, v)
+      end      
     end
   end
   
-  local view,style
-  if t.style then
-    if type(t.style)=="number" then
-      style=t.style
-     elseif t.style:find("^%?") then
-      style = getIdentifier(t.style:sub(2, -1))
-     else
-      local st, sty = pcall(require, t.style)
-      if st then
-        --copytable(sty,t)
-        setmetatable(t, { __index = sty })
-       else
-        style = checkattr(t.style)
-      end
-    end
+  for k, v in ipairs(t) do
+    if k == 1 then continue end
+    view.addView(load(v, env, view.class))
   end
-  if not t[1] then
-    error(string.format("loadlayout error: Fist value Must be a Class, checked import package.\n\tat %s",dump2(t)),0)
+  
+  if (t.base && t.base.let) then
+    t.base.let(view)
   end
 
-  if luajava.instanceof(t[1],View) then
-    --如果是对象
-    view = t[1]
-   elseif type(t[1])=="number" then
-    view=activity.getLayoutInflater().inflate(t[1],nil);
-   else
-    local theme
-    if style then
-      if t.theme then
-        theme = t.theme
-       else
-        theme = style
-      end
-      view = t[1](ContextThemeWrapper(context, theme), nil, style)
-     else
-      view = t[1](context)
-    end
-  end
-
---local n = checkValue(t.layout_height) or 0
---when n > 0 print(n)
-
-  local params=ViewGroup.LayoutParams( checkValue(t.layout_width) or checkValue(t.w) or -2 , checkValue(t.layout_height) or checkValue(t.h) or -2) --设置layout属性
-  if group then
-    params=group.LayoutParams(params)
-  end
-
-    --设置layout_margin属性
-  if t.layout_margin or t.layout_marginStart or t.layout_marginEnd or t.layout_marginLeft or t.layout_marginTop or t.layout_marginRight or t.layout_marginBottom or t.layout_marginVertical or t.layout_marginHorizontal then
-    params.setMargins(checkValues(
-      t.layout_marginLeft or t.layout_marginHorizontal or t.layout_margin or 0,
-      t.layout_marginTop or t.layout_marginVertical or t.layout_margin or 0,
-      t.layout_marginRight or t.layout_marginHorizontal or t.layout_margin or 0,
-      t.layout_marginBottom or t.layout_marginVertical or t.layout_margin or 0))
-  end
-
-  --设置padding属性
-  if t.padding and type(t.padding)=="table" then
-    view.setPadding(checkValues(unpack(t.padding)))
-   elseif t.padding or t.paddingVertical or t.paddingHorizontal or t.paddingLeft or t.paddingTop or t.paddingRight or t.paddingBottom then
-    view.setPadding(checkValues(
-      t.paddingLeft or t.paddingHorizontal or t.padding or 0,
-      t.paddingTop or t.paddingVertical or t.padding or 0,
-      t.paddingRight or t.paddingHorizontal or t.padding or 0,
-      t.paddingBottom or t.paddingVertical or t.padding or 0))
-  end
-
-  if t.paddingStart or t.paddingEnd then
-    view.setPaddingRelative(checkValues(t.paddingStart or t.padding or 0, t.paddingTop or t.padding or 0, t.paddingEnd or t.padding or 0, t.paddingBottom or t.padding or 0))
-  end
-
-  local c={}
-  setmetatable(c,{__index=t})
-  setstyle(c,t,root,view,params,ids)
-
-  for k,v in pairs(t) do
-    if tonumber(k) and (type(v)=="table" or type(v)=="string") then --创建子view
-      if luajava.instanceof(view,AdapterView) then
-        if type(v)=="string" then
-          v=require(v)
-        end
-        view.adapter=LuaAdapter(context,v)
-       else
-        view.addView(loadlayout(v,root,view.getClass()))
-      end
-     elseif k=="id" then
-      rawset(root,v,view)
-      local id=ids.id
-      ids.id=ids.id+1
-      view.setId(id)
-      ids[v]=id
-
-     else
-
-      local e,s=pcall(setattribute,root,view,params,k,v,ids)
-      if not e then
-        local _,i=s:find(":%d+:")
-        s=s:sub(i or 1,-1)
-        local t,du=pcall(dump2,t)
-        print(string.format("loadlayout error %s \n\tat %s\n\tat  key=%s value=%s\n\tat %s",s,view.toString(),k,v,du or ""),0)
-      end
-
-    end
-  end
-
-  view.setLayoutParams(params)
   return view
 end
 
 
-_M.load = loadlayout
-return _M
 
+local function convertConstants(s)
+  local t
+  if type(s) == "string" then
+    t = require(s)
+    package.loaded[s] = nil
+   elseif type(s) ~= "table" then
+    throw("[Layout.load] Error at: %s \n\tThe first argument of the method must be a layout-table or string! ", t)
+   else
+    t = s
+  end
+  
+  for k, v in pairs(t) do
+    if k == 1 then
+      continue
+     elseif Number(k) then
+      t[k] = convertConstants(v)
+     elseif k == "base" then
+      for j, i in pairs(v) do
+        t[j] = t[j] or i
+      end
+      t[k] = nil
+     else
+      if type(v) == "string" then
+      t[k] = measure(v)
+        or toConstant(v, CONSTANTS)
+        or toConstant(v, CONSTANTS_GRAVITY)
+        or v
+      else t[k] = v end
+    end
+  end
+  
+  return t
+end
+
+
+_M.loadImage = function(view, value)
+  view.setImageBitmap(loadbitmap(value))
+end
+
+
+_M.apply = function(arg1, arg2)
+  local t = arg2 or arg1
+  local view = arg2 and arg1 or arg1[1]
+  local params = view.layoutParams
+  
+  local margin = t.layout_margin
+  local marginLeft = t.layout_marginLeft
+    or t.layout_marginHorizontal or margin
+  local marginTop = t.layout_marginTop
+    or t.layout_marginVertical or margin
+  local marginRight = t.layout_marginRight
+    or t.layout_marginHorizontal or margin
+  local marginBottom = t.layout_marginBottom
+    or t.layout_marginVertical or margin
+
+  if (marginLeft || marginTop
+   || marginRight || marginBottom) then
+    params.setMargins(
+      getSpec(marginLeft or 0),
+      getSpec(marginTop or 0),
+      getSpec(marginRight or 0),
+      getSpec(marginBottom or 0)
+    )
+  end
+
+  local padding = t.padding
+  local paddingLeft = t.paddingLeft
+    or t.paddingHorizontal or padding
+  local paddingTop = t.paddingTop
+    or t.paddingVertical or padding
+  local paddingRight = t.paddingRight
+    or t.paddingHorizontal or padding
+  local paddingBottom = t.paddingBottom
+    or t.paddingVertical or padding
+
+  if (paddingLeft || paddingTop
+   || paddingRight || paddingBottom) then
+    view.setPadding(
+      getSpec(paddingLeft or 0),
+      getSpec(paddingTop or 0),
+      getSpec(paddingRight or 0),
+      getSpec(paddingBottom or 0)
+    )
+  end
+
+  if (t.paddingStart || t.paddingEnd) then
+    view.setPaddingRelative(
+      getSpec(t.paddingStart or padding or 0),
+      getSpec(paddingTop or 0),
+      getSpec(t.paddingEnd or padding or 0),
+      getSpec(paddingBottom or 0))
+  end
+  
+  
+  for k, v in pairs(t) do
+    if IGNORED_ATTRS[k] or Number(k) then
+      continue  
+     else   
+      setAttribute(view, k, v, params)
+    end
+  end
+end
+
+_M.addAttributeResolver = function(k, v)
+  customAttrs[k] = v
+end
+
+_M.addAttributeResolvers = function(t)
+  for k, v in pairs(t) do
+    customAttrs[k] = v
+  end
+end
+
+_M.Internal = {
+  CONSTANTS_MEASUREMENT = CONSTANTS_MEASUREMENT,
+  IGNORED_ATTRS = IGNORED_ATTRS,
+  UNITS_CONVERTER = UNITS_CONVERTER,
+  CONSTANTS_GRAVITY = CONSTANTS_GRAVITY,
+  UNITS = UNITS,
+  toConstant = toConstant,
+  getSpec = getSpec,
+  measure = measure,
+  initView = initView,
+  setAttribute = setAttribute
+}
+
+_M.initLayout = convertConstants
+_M.load = load
+return setmetatable(_M, _M)

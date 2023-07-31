@@ -9,15 +9,10 @@ local new = luajava.new
 local bindClass = luajava.bindClass
 local ltrs={}
 local type=type
+local pcall=pcall
 local context=activity or service
 
---DrawerLayout = bindClass "androidx.drawerlayout.widget.DrawerLayout"
---ToolBar = bindClass "androidx.appcompat.widget.Toolbar"
---CoordinatorLayout = bindClass "androidx.coordinatorlayout.widget.CoordinatorLayout"
---ViewPager = bindClass "androidx.viewpager.widget.ViewPager"
-CardView = bindClass "androidx.cardview.widget.CardView"
---SearchView = bindClass "androidx.appcompat.widget.SearchView"
-
+local luadir = context.getLuaDir()
 local ViewGroup = bindClass("android.view.ViewGroup")
 local String = bindClass("java.lang.String")
 --local Gravity = bindClass("android.view.Gravity")
@@ -68,7 +63,7 @@ local function alyloader(path)
     return f,st
   end
 end
-table.insert(package.searchers,alyloader)
+insert(package.searchers,alyloader)
 
 local id=0x7f000000
 local toint={
@@ -392,16 +387,16 @@ end
 
 local function dump2 (t)
   local _t={}
-  table.insert(_t,tostring(t))
-  table.insert(_t,"\t{")
+  insert(_t,tostring(t))
+  insert(_t,"\t{")
   for k,v in pairs(t) do
     if type(v)=="table" then
-      table.insert(_t,"\t\t"..tostring(k).."={"..tostring(v[1]).." ...}")
+      insert(_t,"\t\t"..tostring(k).."={"..tostring(v[1]).." ...}")
      else
-      table.insert(_t,"\t\t"..tostring(k).."="..tostring(v))
+      insert(_t,"\t\t"..tostring(k).."="..tostring(v))
     end
   end
-  table.insert(_t,"\t}")
+  insert(_t,"\t}")
   t=table.concat(_t,"\n")
   return t
 end
@@ -614,11 +609,11 @@ local function setattribute(root,view,params,k,v,ids)
    elseif k=="ellipsize" then
     view.setEllipsize(TruncateAt[string.upper(v)])
    elseif k=="url" then
-    view.loadUrl(url)
+    view.loadUrl(v)
    elseif k=="src" then
     local path = v
-    if not path:find("^/") then
-      local _path = context.getLuaDir().."/"..path
+    if not path:find("^/") and path:sub(1, 4) ~= "http" then
+      local _path = luadir.."/"..path
       if (_path ~= nil) then
         path = _path
       end
@@ -631,8 +626,8 @@ local function setattribute(root,view,params,k,v,ids)
       if v:find("^%?") then
         --view.setBackgroundResource(getIdentifier(v:sub(2,-1)))
         local path = v
-        if not path:find("^/") then
-          local _path = context.getLuaDir().."/"..path
+        if not path:find("^/") and path:sub(1, 4) ~= "http" then
+          local _path = luadir.."/"..path
           if (_path ~= nil) then
             path = _path
           end
@@ -725,16 +720,6 @@ local function setattribute(root,view,params,k,v,ids)
   end
   return params
 end
-
---[[似乎这是一个无用的函数
-local function copytable(f,t,b)
-  for k,v in pairs(f) do
-    if k==1 then
-     elseif b or t[k]==nil then
-      t[k]=v
-    end
-  end
-end]]
 
 local function setstyle(c,t,root,view,params,ids)
   local mt=getmetatable(t)

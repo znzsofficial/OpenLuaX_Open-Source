@@ -215,7 +215,7 @@ end
 
 function getFileInfo(file)
   --size=FileSizeUtil.format(tointeger(file.length()))
-  size=LuaUtil.formatFileSize(tointeger(file.length()))
+  size=tonumber(file.length())/1024 .. "k"
   lastModified=os.date("%y/%m/%d %H:%M:%S",file.lastModified()/1000)
   return size.."\t|\t"..lastModified
 end

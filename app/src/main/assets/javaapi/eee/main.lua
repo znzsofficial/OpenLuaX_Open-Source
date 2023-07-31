@@ -1,4 +1,9 @@
 require "import"
+
+function dp2px(dp)
+  return math.floor(dp*activity.resources.displayMetrics.density+0.5)
+end
+
 import "android.app.*"
 import "android.os.*"
 import "android.widget.*"
@@ -7,21 +12,30 @@ import "android.content.*"
 import "android.text.SpannableString"
 import "android.text.style.ForegroundColorSpan"
 import "android.text.style.UnderlineSpan"
+import "android.graphics.drawable.ColorDrawable"
+import "android.animation.ObjectAnimator"
+import "android.animation.AnimatorSet"
+import "android.view.animation.DecelerateInterpolator"
 import "android.text.style.ClickableSpan"
 import "android.graphics.drawable.GradientDrawable"
 import "android.text.method.LinkMovementMethod"
 import "androidx.appcompat.widget.AppCompatSpinner"
 import "com.google.android.material.card.MaterialCardView"
+import "androidx.appcompat.widget.AppCompatImageView"
+import "androidx.cardview.widget.CardView"
 import "com.google.android.material.textview.MaterialTextView"
 import "com.google.android.material.textfield.TextInputLayout"
 import "com.google.android.material.textfield.TextInputEditText"
 import "com.google.android.material.dialog.MaterialAlertDialogBuilder"
 import "android.graphics.Color"
-MDC_R=luajava.bindClass"com.google.android.material.R"
+local MDC_R=luajava.bindClass"com.google.android.material.R"
 activity.theme=MDC_R.style.Theme_Material3_DynamicColors_DayNight
 
+local utf8=utf8
+local table=table
+
 import "github.daisukiKaffuChino.utils.LuaThemeUtil"
-themeUtil=LuaThemeUtil(this)
+local themeUtil=LuaThemeUtil(this)
 accentColor=themeUtil.ColorAccent
 errorColor=themeUtil.ColorError
 outlineColor=themeUtil.ColorOutline
@@ -35,7 +49,7 @@ secondaryColor=themeUtil.ColorSecondary
 tertiaryc=themeUtil.ColorTertiary
 textc=themeUtil.TextColor
 
-class = require "modules.class"
+local class = require "modules.class"
 OutlinedTextInputLayout=class{
   name="material.OutlinedTextInputLayout",
   extends=TextInputLayout,
@@ -65,18 +79,26 @@ OutlinedTextInputEditText=class{
     return super(OutlinedTextInputLayout(context).context)
   end,
 }
+
 function circ(c,r)
   return GradientDrawable().setShape(0).setColor(c).setCornerRadius(r)
 end
 
-import "ee"
+import "util"
 import "layout"
 activity.setContentView(loadlayout(layout))
+.getSupportActionBar()
+.setElevation(0)
+.setBackgroundDrawable(ColorDrawable(backgroundc))
+.setDisplayShowHomeEnabled(true)
+.setDisplayHomeAsUpEnabled(true)
+
+
 colo1=primaryColor--修饰类颜色
 colo2=secondaryColor--序列号颜色
 colo3=textc--主字体颜色
 
-ex,ss,co=...
+local ex,ss,co=...
 
 --标题栏--
 activity.Title=ex
@@ -87,7 +109,6 @@ eee,class = aas(ex)
 function fz(content)
   activity.getSystemService(Context.CLIPBOARD_SERVICE).setText(tostring(content))
 end
-
 
 --分离修饰类和方法类、简化。
 function vvv(a,tag)
@@ -202,12 +223,23 @@ function ll(a)
     ed.setWidth(activity.getWidth())
   end
 
+  local Anim = AnimatorSet()
+  local X=ObjectAnimator.ofFloat(li, "translationY", {50, 0})
+  local A=ObjectAnimator.ofFloat(li, "alpha", {0, 1})
+  Anim.play(A).with(X)
+  Anim.setDuration(500)
+  .setInterpolator(DecelerateInterpolator())
+  .start()
   --[[
   for i=1,#aaa do
     load(aaa[i]..".BackgroundColor = 0xFFFFFFFF")()--未选择的按钮颜色
   end]]
   --a.setCardElevation(8)--当前选择的按钮颜色
 
+  for i=1,#aaa do
+    load(aaa[i]..".setCardElevation(0)")()--未选择的按钮颜色
+  end
+  a.setCardElevation(4)--当前选择的按钮颜色
   ed.Text=""
 end
 
@@ -223,7 +255,7 @@ for k,v in pairs(eee)
     local a = table.find(aaa,k)
     if aaa[a] ~= "hh" then
       --load(aaa[a]..".BackgroundColor = 0x00FFFFFF")()
-      load(aaa[a]..".setEnabled(false)")()
+      load(aaa[a]..".setVisibility(8)")()
       table.remove(aaa,a)
     end
   end
@@ -295,13 +327,12 @@ function 列表(a,s)
   item={
     LinearLayout,
     orientation="vertical",
-    layout_height="50dp";
+    layout_height="wrap";
     { RelativeLayout,
       {
         MaterialTextView,--修饰类、翻译
         id="ep",
         textSize="12sp",
-        singleLine="true";
         textColor=colo1;
         layout_marginLeft="6dp";
       },
@@ -317,7 +348,6 @@ function 列表(a,s)
     {
       MaterialTextView,--主要内容
       id="ez",
-      singleLine="true";
       layout_margin="2dp",
       textColor=colo3;
       layout_marginLeft="6dp";
@@ -420,7 +450,7 @@ ass={
     Visibility=8;
   };
   {
-    ImageView;
+    AppCompatImageView;
     id="asg",
     layout_height="88dp";
     layout_width="88dp";

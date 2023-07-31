@@ -9,14 +9,8 @@ local new = luajava.new
 local bindClass = luajava.bindClass
 local ltrs={}
 local type=type
+local pcall = pcall
 local context=activity or service
-
---DrawerLayout = bindClass "androidx.drawerlayout.widget.DrawerLayout"
---ToolBar = bindClass "androidx.appcompat.widget.Toolbar"
---CoordinatorLayout = bindClass "androidx.coordinatorlayout.widget.CoordinatorLayout"
---ViewPager = bindClass "androidx.viewpager.widget.ViewPager"
-CardView = bindClass "androidx.cardview.widget.CardView"
---SearchView = bindClass "androidx.appcompat.widget.SearchView"
 
 local ViewGroup = bindClass("android.view.ViewGroup")
 local String = bindClass("java.lang.String")
@@ -65,7 +59,7 @@ local function alyloader(path)
     return f,st
   end
 end
-table.insert(package.searchers,alyloader)
+insert(package.searchers,alyloader)
 
 local id=0x7f000000
 local toint={
@@ -389,16 +383,16 @@ end
 
 local function dump2 (t)
   local _t={}
-  table.insert(_t,tostring(t))
-  table.insert(_t,"\t{")
+  insert(_t,tostring(t))
+  insert(_t,"\t{")
   for k,v in pairs(t) do
     if type(v)=="table" then
-      table.insert(_t,"\t\t"..tostring(k).."={"..tostring(v[1]).." ...}")
+      insert(_t,"\t\t"..tostring(k).."={"..tostring(v[1]).." ...}")
      else
-      table.insert(_t,"\t\t"..tostring(k).."="..tostring(v))
+      insert(_t,"\t\t"..tostring(k).."="..tostring(v))
     end
   end
-  table.insert(_t,"\t}")
+  insert(_t,"\t}")
   t=table.concat(_t,"\n")
   return t
 end

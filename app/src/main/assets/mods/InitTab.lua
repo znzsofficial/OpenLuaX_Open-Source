@@ -96,7 +96,7 @@ _M.setTab=function(path)
     end
 
     tabTable[path].o=tab
-    --首次打开文件时tab还没有tag这个字段，所以直接捕获异常
+    --首次打开文件时tab还没有tag，所以直接捕获异常
     tabTable[path].o.tag=path
 
     tabTable[path].showed=true

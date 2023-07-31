@@ -18,7 +18,6 @@ local p={
   "github.daisukiKaffuChino.LuaPagerAdapter",
   "github.daisukiKaffuChino.LuaCustRecyclerAdapter",
   "github.daisukiKaffuChino.LuaCustRecyclerHolder",
-  "github.daisukiKaffuChino.LuaMaterialDialog",
   "github.daisukiKaffuChino.NoScrollGridView",
   "github.daisukiKaffuChino.NoScrollListView",
   "github.daisukiKaffuChino.utils.LuaReflectionUtil",
